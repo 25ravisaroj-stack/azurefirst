@@ -49,8 +49,8 @@ public class UserController : ControllerBase
                 using (MySqlDataReader reader = cmd.ExecuteReader())
                 {
                     Console.WriteLine(request.Name);
-Console.WriteLine(request.Password);
-Console.WriteLine(connectionString);
+                    Console.WriteLine(request.Password);
+                    Console.WriteLine(connectionString);
                     if (reader.Read())
                     {
                         string userId = reader["id"].ToString()!;
@@ -106,6 +106,64 @@ Console.WriteLine(connectionString);
         return new JwtSecurityTokenHandler()
             .WriteToken(token);
     }
+
+
+
+    [HttpGet]
+[Route("useraccess")]
+public IActionResult GetAllUsers()
+{
+    string connectionString =
+        _configuration.GetConnectionString("DefaultConnection");
+
+    List<UserListResponse> users = new();
+
+    using (MySqlConnection con = new MySqlConnection(connectionString))
+    {
+        con.Open();
+
+        string query = @"
+        SELECT
+            ua.id,
+            ua.name,
+            ua.photo,
+            ur.role
+        FROM useraccess ua
+        LEFT JOIN userrole ur
+            ON ua.id = ur.useraccessId
+        ORDER BY ua.id";
+
+        using (MySqlCommand cmd = new MySqlCommand(query, con))
+        using (MySqlDataReader reader = cmd.ExecuteReader())
+        {
+            while (reader.Read())
+            {
+                int id = Convert.ToInt32(reader["id"]);
+
+                var user = users.FirstOrDefault(x => x.Id == id);
+
+                if (user == null)
+                {
+                    user = new UserListResponse
+                    {
+                        Id = id,
+                        Name = reader["name"].ToString()!,
+                        Photo = reader["photo"]?.ToString()
+                    };
+
+                    users.Add(user);
+                }
+
+                if (reader["role"] != DBNull.Value)
+                {
+                    user.Roles.Add(reader["role"].ToString()!);
+                }
+            }
+        }
+    }
+
+    return Ok(users);
+}
 }
 
 
