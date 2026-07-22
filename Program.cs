@@ -65,7 +65,7 @@ builder.Services.AddCors(options =>
 
     {
 
-        policy.WithOrigins("https://shoppingapp-afhgazdad5bhhjfn.southindia-01.azurewebsites.net/").AllowAnyHeader().AllowAnyMethod();
+        policy.WithOrigins("https://shoppingapp-afhgazdad5bhhjfn.southindia-01.azurewebsites.net").AllowAnyHeader().AllowAnyMethod();
 
     });
 });
@@ -79,10 +79,11 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
+app.UseCors("AngularPolicy");
 app.UseAuthentication();
 
 app.UseAuthorization();
-app.UseCors("AngularPolicy");
+
 
 var summaries = new[]
 {
