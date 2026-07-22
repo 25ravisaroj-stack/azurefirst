@@ -66,6 +66,7 @@ builder.Services.AddCors(options =>
     {
 
         policy.WithOrigins("https://shoppingapp-afhgazdad5bhhjfn.southindia-01.azurewebsites.net").AllowAnyHeader().AllowAnyMethod();
+        policy.WithOrigins("http://localhost:4200").AllowAnyHeader().AllowAnyMethod();
 
     });
 });
