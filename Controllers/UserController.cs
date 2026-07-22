@@ -48,6 +48,9 @@ public class UserController : ControllerBase
 
                 using (MySqlDataReader reader = cmd.ExecuteReader())
                 {
+                    Console.WriteLine(request.Name);
+Console.WriteLine(request.Password);
+Console.WriteLine(connectionString);
                     if (reader.Read())
                     {
                         string userId = reader["id"].ToString()!;

@@ -64,3 +64,4 @@ C:\Users\ravi.saroj\webapi\product\bin\Debug\net10.0\Microsoft.IdentityModel.Tok
 C:\Users\ravi.saroj\webapi\product\bin\Debug\net10.0\System.IdentityModel.Tokens.Jwt.dll
 C:\Users\ravi.saroj\webapi\product\obj\Debug\net10.0\product.RazorAssemblyInfo.cache
 C:\Users\ravi.saroj\webapi\product\obj\Debug\net10.0\product.RazorAssemblyInfo.cs
+C:\Users\ravi.saroj\webapi\product\obj\Debug\net10.0\product.sourcelink.json
