@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.ObjectPool;
 using Microsoft.IdentityModel.Tokens;
 using MySql.Data.MySqlClient;
 using product.Models;
@@ -110,19 +111,19 @@ public class UserController : ControllerBase
 
 
     [HttpGet]
-[Route("useraccess")]
-public IActionResult GetAllUsers()
-{
-    string connectionString =
-        _configuration.GetConnectionString("DefaultConnection");
-
-    List<UserListResponse> users = new();
-
-    using (MySqlConnection con = new MySqlConnection(connectionString))
+    [Route("useraccess")]
+    public IActionResult GetAllUsers()
     {
-        con.Open();
+        string connectionString =
+            _configuration.GetConnectionString("DefaultConnection");
 
-        string query = @"
+        List<UserListResponse> users = new();
+
+        using (MySqlConnection con = new MySqlConnection(connectionString))
+        {
+            con.Open();
+
+            string query = @"
         SELECT
             ua.id,
             ua.name,
@@ -133,37 +134,103 @@ public IActionResult GetAllUsers()
             ON ua.id = ur.useraccessId
         ORDER BY ua.id";
 
-        using (MySqlCommand cmd = new MySqlCommand(query, con))
-        using (MySqlDataReader reader = cmd.ExecuteReader())
-        {
-            while (reader.Read())
+            using (MySqlCommand cmd = new MySqlCommand(query, con))
+            using (MySqlDataReader reader = cmd.ExecuteReader())
             {
-                int id = Convert.ToInt32(reader["id"]);
-
-                var user = users.FirstOrDefault(x => x.Id == id);
-
-                if (user == null)
+                while (reader.Read())
                 {
-                    user = new UserListResponse
+                    int id = Convert.ToInt32(reader["id"]);
+
+                    var user = users.FirstOrDefault(x => x.Id == id);
+
+                    if (user == null)
                     {
-                        Id = id,
-                        Name = reader["name"].ToString()!,
-                        Photo = reader["photo"]?.ToString()
-                    };
+                        user = new UserListResponse
+                        {
+                            Id = id,
+                            Name = reader["name"].ToString()!,
+                            Photo = reader["photo"]?.ToString()
+                        };
 
-                    users.Add(user);
-                }
+                        users.Add(user);
+                    }
 
-                if (reader["role"] != DBNull.Value)
-                {
-                    user.Roles.Add(reader["role"].ToString()!);
+                    if (reader["role"] != DBNull.Value)
+                    {
+                        user.Roles.Add(reader["role"].ToString()!);
+                    }
                 }
             }
         }
-    }
 
-    return Ok(users);
-}
+        return Ok(users);
+    }
+    [HttpPost]
+    [Route("userpermission")]
+    public IActionResult SaveUser([FromBody] UserListResponse userdata)
+    {
+        try
+        {
+            string connectionString =
+                _configuration.GetConnectionString("DefaultConnection");
+
+            using (MySqlConnection con = new MySqlConnection(connectionString))
+            {
+                con.Open();
+
+                string query = @"
+                INSERT INTO useraccess
+                (name, photo, password)
+                VALUES
+                (@name, @photo, @password);
+
+                SELECT LAST_INSERT_ID();
+            ";
+
+                long userId;
+
+                using (MySqlCommand cmd = new MySqlCommand(query, con))
+                {
+                    cmd.Parameters.AddWithValue("@name", userdata.Name);
+                    cmd.Parameters.AddWithValue("@photo", userdata.Photo ?? "");
+                    cmd.Parameters.AddWithValue("@password", userdata.password);
+
+                    userId = Convert.ToInt64(cmd.ExecuteScalar());
+                }
+
+                // Save Roles
+                if (userdata.Roles != null && userdata.Roles.Count > 0)
+                {
+                    foreach (var role in userdata.Roles)
+                    {
+                        string roleQuery = @"
+                        INSERT INTO userrole
+                        (useraccessId, role)
+                        VALUES
+                        (@useraccessId, @role)";
+
+                        using (MySqlCommand roleCmd = new MySqlCommand(roleQuery, con))
+                        {
+                            roleCmd.Parameters.AddWithValue("@useraccessId", userId);
+                            roleCmd.Parameters.AddWithValue("@role", role);
+
+                            roleCmd.ExecuteNonQuery();
+                        }
+                    }
+                }
+
+                return Ok(new
+                {
+                    Message = "User created successfully",
+                    UserId = userId
+                });
+            }
+        }
+        catch (Exception ex)
+        {
+            return BadRequest(ex.Message);
+        }
+    }
 }
 
 

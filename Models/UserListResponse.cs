@@ -6,5 +6,6 @@ namespace product.Models
         public string Name { get; set; } = "";
         public string? Photo { get; set; }
         public List<string> Roles { get; set; } = new();
+        public string? password {get;set;}
     }
 }
